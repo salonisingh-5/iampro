@@ -2,254 +2,244 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>AI Security Detection System</title>
-
     <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:Arial, Helvetica, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
-        body{
-
-            background: linear-gradient(
-                135deg,
-                #0f172a,
-                #1e293b,
-                #111827
-            );
-
-            min-height:100vh;
-
-            display:flex;
-            justify-content:center;
-            align-items:center;
-
-            color:white;
-
-            padding:30px;
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b, #111827);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 30px;
         }
 
-        .container{
-
-            width:90%;
-            max-width:800px;
-
-            background: rgba(255,255,255,0.08);
-
-            padding:40px;
-
-            border-radius:20px;
-
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 40px;
+            border-radius: 20px;
             backdrop-filter: blur(10px);
-
-            box-shadow:0 0 25px rgba(0,0,0,0.4);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
         }
 
-        h1{
-
-            text-align:center;
-
-            margin-bottom:30px;
-
-            color:#38bdf8;
-
-            font-size:38px;
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #38bdf8;
+            font-size: 38px;
         }
 
-        .subtitle{
-
-            text-align:center;
-
-            margin-bottom:25px;
-
-            color:#cbd5e1;
-
-            font-size:16px;
+        .subtitle {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #cbd5e1;
+            font-size: 16px;
         }
 
-        textarea{
-
-            width:100%;
-
-            height:180px;
-
-            padding:18px;
-
-            border:none;
-
-            border-radius:15px;
-
-            resize:none;
-
-            font-size:16px;
-
-            background:#1e293b;
-
-            color:white;
-
-            outline:none;
-
-            border:2px solid transparent;
-
-            transition:0.3s;
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 18px;
+            border-radius: 15px;
+            resize: none;
+            font-size: 16px;
+            background: #1e293b;
+            color: white;
+            outline: none;
+            border: 2px solid transparent;
+            transition: 0.3s;
         }
 
-        textarea:focus{
-
-            border:2px solid #38bdf8;
+        textarea:focus {
+            border: 2px solid #38bdf8;
         }
 
-        button{
-
-            width:100%;
-
-            margin-top:20px;
-
-            padding:15px;
-
-            border:none;
-
-            border-radius:15px;
-
-            background:#38bdf8;
-
-            color:#0f172a;
-
-            font-size:18px;
-
-            font-weight:bold;
-
-            cursor:pointer;
-
-            transition:0.3s;
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: #38bdf8;
+            color: #0f172a;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        button:hover{
-
-            background:#0ea5e9;
-
-            transform:scale(1.02);
+        button:hover {
+            background: #0ea5e9;
+            transform: scale(1.02);
         }
 
-        .result-box{
-
-            margin-top:30px;
-
-            padding:20px;
-
-            border-radius:15px;
-
-            background:#111827;
-
-            border-left:6px solid #38bdf8;
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #111827;
+            border-left: 6px solid #38bdf8;
         }
 
-        .risk{
-
-            font-size:22px;
-
-            font-weight:bold;
-
-            margin-bottom:15px;
+        .risk {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 15px;
         }
 
-        .response{
-
-            color:#e2e8f0;
-
-            line-height:1.7;
+        .response {
+            color: #e2e8f0;
+            line-height: 1.7;
         }
 
-        .low{
+        .low    { color: #22c55e; }
+        .medium { color: #facc15; }
+        .high   { color: #ef4444; }
 
-            color:#22c55e;
+        .citation-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 5px;
         }
 
-        .medium{
-
-            color:#facc15;
+        .citation-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: #94a3b8;
+            border-bottom: 1px solid #334155;
         }
 
-        .high{
-
-            color:#ef4444;
+        .citation-table td {
+            padding: 8px 10px;
+            color: #e2e8f0;
+            border-bottom: 1px solid #1e293b;
+            vertical-align: top;
         }
 
+        .badge-verified     { color: #22c55e; }
+        .badge-hallucinated { color: #ef4444; }
+        .badge-unverifiable { color: #94a3b8; }
     </style>
-
 </head>
 
 <body>
-
     <div class="container">
 
         <h1>AI Security Detection System</h1>
-
-        <p class="subtitle">
-            Semantic AI-Based Prompt Injection & Threat Detection
-        </p>
+        <p class="subtitle">Semantic AI-Based Prompt Injection & Citation Hallucination Detection</p>
 
         <form method="POST">
-
             <textarea
                 name="prompt"
                 placeholder="Enter your prompt here...">{{ request.form.get('prompt', '') }}</textarea>
-
-            <button type="submit">
-                Analyze Prompt
-            </button>
-
+            <button type="submit">Analyze Prompt</button>
         </form>
 
-        {% if risk %}
+        <!-- Safety Score block -->
+        {% if safety %}
+        <div class="result-box" style="margin-top:20px; border-left-color:
+            {% if safety.color == 'low' %}#22c55e
+            {% elif safety.color == 'medium' %}#facc15
+            {% else %}#ef4444{% endif %};">
 
-        <div class="result-box">
-
-            <div class="risk">
-
-                Risk Level:
-
-                <span class="
-                    {% if risk == 'LOW' %}
-                        low
-                    {% elif risk == 'MEDIUM' %}
-                        medium
-                    {% else %}
-                        high
-                    {% endif %}
-                ">
-
-                    {{ risk }}
-
-                </span>
-
+            <div class="risk" style="color:
+                {% if safety.color == 'low' %}#22c55e
+                {% elif safety.color == 'medium' %}#facc15
+                {% else %}#ef4444{% endif %};">
+                Safety Score: {{ safety.score }}/100 — {{ safety.verdict }}
             </div>
 
-            <div class="response">
-
-                <strong>System Response:</strong>
-
-                <br><br>
-
-                {{ response }}
-
-            </div>
+            <p style="color:#cbd5e1; font-size:14px; margin-top:5px;">
+                Prompt safety contribution: {{ safety.prompt_component }}/40 &nbsp;|&nbsp;
+                Citation contribution: {{ safety.citation_component }}/60
+            </p>
+            <p style="color:#94a3b8; font-size:13px; margin-top:8px;">
+                {{ safety.citation_note }}
+            </p>
 
         </div>
+        {% endif %}
 
+        <!-- Risk + Response block -->
+        {% if risk %}
+        <div class="result-box" style="margin-top:20px;">
+            <div class="risk">
+                Risk Level:
+                <span class="
+                    {% if risk == 'LOW' %}low
+                    {% elif risk == 'MEDIUM' %}medium
+                    {% else %}high{% endif %}
+                ">{{ risk }}</span>
+            </div>
+            <div class="response">
+                <strong>System Response:</strong><br><br>
+                {{ response }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Citation Analysis block -->
+        {% if citations %}
+        <div class="result-box" style="margin-top:20px; border-left-color:#a78bfa;">
+
+            <div class="risk" style="color:#a78bfa;">Citation Analysis</div>
+
+            <p style="color:#cbd5e1; margin-bottom:15px;">
+                Found {{ citation_summary.total }} citation(s) —
+                <span style="color:#22c55e;">{{ citation_summary.verified }} verified</span> /
+                <span style="color:#ef4444;">{{ citation_summary.hallucinated }} hallucinated</span>
+                {% if citation_summary.unverifiable > 0 %}
+                / <span style="color:#94a3b8;">{{ citation_summary.unverifiable }} unverifiable</span>
+                {% endif %}
+            </p>
+
+            <table class="citation-table">
+                <thead>
+                    <tr>
+                        <th>Author</th>
+                        <th>Year</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in citations %}
+                    <tr>
+                        <td>{{ c.authors or '—' }}</td>
+                        <td>{{ c.year or '—' }}</td>
+                        <td>{{ c.title or c.raw }}</td>
+                        <td>
+                            {% if c.status == 'verified' %}
+                                <span class="badge-verified">✅ Verified</span>
+                            {% elif c.status == 'hallucinated' %}
+                                <span class="badge-hallucinated">⚠️ Hallucinated</span>
+                            {% else %}
+                                <span class="badge-unverifiable">? Unverifiable</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ c.confidence }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
         {% endif %}
 
     </div>
-
 </body>
 
 </html>
