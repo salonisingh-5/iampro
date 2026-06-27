@@ -37,7 +37,7 @@ except ImportError:
 SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
 CROSSREF_URL = "https://api.crossref.org/works"
 
-VERIFICATION_THRESHOLD = 70   # title similarity % required to count as a match
+VERIFICATION_THRESHOLD = 78   # stricter threshold to reduce false positives
 REQUEST_TIMEOUT = 6           # seconds, keep short so one slow API doesn't stall the pipeline
 
 
@@ -92,11 +92,13 @@ def _best_match(candidate_title, candidate_author, results, source_name):
         if not title:
             continue
         score = _similarity(candidate_title or "", title)
-        # small bonus if the candidate author surname appears in the result's author list
+
+        # small bonus if the candidate author matches any result author (full name fuzzy match)
         if candidate_author:
-            surname = candidate_author.split()[-1].lower().rstrip(",")
-            if any(surname in a.lower() for a in authors):
-                score = min(100, score + 5)
+            for a in authors:
+                if _similarity(candidate_author, a) > 70:
+                    score = min(100, score + 10)
+
         if score > best["score"]:
             best = {"score": round(score, 1), "matched_title": title, "source": source_name}
     return best
@@ -110,6 +112,7 @@ def verify_citation(citation, delay=0.0):
     query_text = citation.get("title") or citation.get("raw") or ""
     if not query_text.strip():
         citation.update({"status": "unverifiable", "confidence": 0, "matched_title": None, "source": None})
+        print(f"[LOG] Citation unverifiable (empty query): {citation}")
         return citation
 
     if delay:
@@ -121,6 +124,7 @@ def verify_citation(citation, delay=0.0):
     if not ss_results and not cr_results:
         # Both APIs unreachable/timed out -- don't count this as a confirmed hallucination
         citation.update({"status": "unverifiable", "confidence": 0, "matched_title": None, "source": None})
+        print(f"[LOG] Citation unverifiable (API failure): {citation}")
         return citation
 
     candidates = [
@@ -135,6 +139,10 @@ def verify_citation(citation, delay=0.0):
         "matched_title": best["matched_title"],
         "source": best["source"] if best["score"] >= VERIFICATION_THRESHOLD else None,
     })
+
+    print(f"[LOG] Citation checked: title='{citation.get('title')}', "
+          f"status={citation['status']}, confidence={citation['confidence']}, "
+          f"source={citation['source']}")
     return citation
 
 
@@ -167,6 +175,7 @@ def verify_citations(citations, delay_between_calls=0.2):
         "unverifiable": unverifiable,
         "verification_rate": verification_rate,
     }
+    print(f"[LOG] Verification summary: {summary}")
     return results, summary
 
 
