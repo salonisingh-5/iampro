@@ -28,7 +28,7 @@ try:
     def _similarity(a, b):
         return fuzz.token_sort_ratio(a, b)
 except ImportError:
-    # Fallback if rapidfuzz isn't installed: pip install rapidfuzz --break-system-packages
+    # Fallback if rapidfuzz isn't installed
     from difflib import SequenceMatcher
     def _similarity(a, b):
         return SequenceMatcher(None, a.lower(), b.lower()).ratio() * 100
@@ -37,8 +37,9 @@ except ImportError:
 SEMANTIC_SCHOLAR_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
 CROSSREF_URL = "https://api.crossref.org/works"
 
-VERIFICATION_THRESHOLD = 78   # stricter threshold to reduce false positives
-REQUEST_TIMEOUT = 6           # seconds, keep short so one slow API doesn't stall the pipeline
+VERIFICATION_THRESHOLD = 78   # threshold to reduce false positives
+PARTIAL_THRESHOLD = 50        # threshold for partially valid
+REQUEST_TIMEOUT = 6           # seconds
 
 
 def _query_semantic_scholar(query_text):
@@ -93,7 +94,7 @@ def _best_match(candidate_title, candidate_author, results, source_name):
             continue
         score = _similarity(candidate_title or "", title)
 
-        # small bonus if the candidate author matches any result author (full name fuzzy match)
+        # bonus if author matches
         if candidate_author:
             for a in authors:
                 if _similarity(candidate_author, a) > 70:
@@ -106,7 +107,7 @@ def _best_match(candidate_title, candidate_author, results, source_name):
 
 def verify_citation(citation, delay=0.0):
     """
-    Verify a single citation dict (as produced by citation_extractor.extract_citations).
+    Verify a single citation dict.
     Returns the citation dict augmented with verification results.
     """
     query_text = citation.get("title") or citation.get("raw") or ""
@@ -116,13 +117,12 @@ def verify_citation(citation, delay=0.0):
         return citation
 
     if delay:
-        time.sleep(delay)  # be polite to free-tier APIs if verifying many citations in a loop
+        time.sleep(delay)
 
     ss_results = _query_semantic_scholar(query_text)
     cr_results = _query_crossref(query_text)
 
     if not ss_results and not cr_results:
-        # Both APIs unreachable/timed out -- don't count this as a confirmed hallucination
         citation.update({"status": "unverifiable", "confidence": 0, "matched_title": None, "source": None})
         print(f"[LOG] Citation unverifiable (API failure): {citation}")
         return citation
@@ -133,11 +133,19 @@ def verify_citation(citation, delay=0.0):
     ]
     best = max(candidates, key=lambda c: c["score"])
 
+    # Three-way classification
+    if best["score"] >= VERIFICATION_THRESHOLD:
+        status = "valid"
+    elif best["score"] >= PARTIAL_THRESHOLD:
+        status = "partially_valid"
+    else:
+        status = "hallucinated"
+
     citation.update({
-        "status": "verified" if best["score"] >= VERIFICATION_THRESHOLD else "hallucinated",
+        "status": status,
         "confidence": best["score"],
         "matched_title": best["matched_title"],
-        "source": best["source"] if best["score"] >= VERIFICATION_THRESHOLD else None,
+        "source": best["source"] if status != "hallucinated" else None,
     })
 
     print(f"[LOG] Citation checked: title='{citation.get('title')}', "
@@ -149,31 +157,21 @@ def verify_citation(citation, delay=0.0):
 def verify_citations(citations, delay_between_calls=0.2):
     """
     Verify a list of citation dicts. Returns (results, summary).
-
-    summary = {
-        "total": int,
-        "verified": int,
-        "hallucinated": int,
-        "unverifiable": int,
-        "verification_rate": float  # verified / (verified + hallucinated), ignores unverifiable
-    }
     """
     results = [verify_citation(c, delay=delay_between_calls) for c in citations]
 
     total = len(results)
-    verified = sum(1 for r in results if r["status"] == "verified")
+    valid = sum(1 for r in results if r["status"] == "valid")
+    partial = sum(1 for r in results if r["status"] == "partially_valid")
     hallucinated = sum(1 for r in results if r["status"] == "hallucinated")
     unverifiable = sum(1 for r in results if r["status"] == "unverifiable")
 
-    decidable = verified + hallucinated
-    verification_rate = round(verified / decidable, 3) if decidable else None
-
     summary = {
         "total": total,
-        "verified": verified,
+        "valid": valid,
+        "partially_valid": partial,
         "hallucinated": hallucinated,
         "unverifiable": unverifiable,
-        "verification_rate": verification_rate,
     }
     print(f"[LOG] Verification summary: {summary}")
     return results, summary
@@ -186,6 +184,7 @@ if __name__ == "__main__":
     References:
     1. Vaswani, A. (2017). Attention is all you need. NeurIPS.
     2. Fakeauthor, Q. (2099). A completely made up paper about nothing. Nonexistent Journal.
+    3. Title mismatch example.
     """
     citations = extract_citations(sample)
     results, summary = verify_citations(citations)
